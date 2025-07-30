@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+"""
+mdview – visualizar Markdown com Rich + pager.
+
+USO
+  mdview README.md
+  mdview README.md --theme dracula
+  mdview --list-themes          # catálogo com preview (fundo igual ao terminal)
+"""
+from __future__ import annotations
+import argparse, os, sys, pathlib, textwrap
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.syntax import PygmentsSyntaxTheme
+from pygments.styles import get_all_styles, get_style_by_name
+
+# ───────────────────────── helpers ─────────────────────────
+DEMO = textwrap.dedent("""\
+    _Exemplo **Markdown** + bloco de código_
+
+    ```python
+    def hello(name):
+        print(f"Hello {name}!")
+    hello("world")
+    ```
+""")
+
+def theme_names() -> list[str]:
+    return sorted(get_all_styles()) or ["monokai"]
+
+# cache p/ não recriar a cada chamada
+_theme_cache: dict[str, PygmentsSyntaxTheme] = {}
+
+def transparent_theme(name: str) -> PygmentsSyntaxTheme:
+    """
+    Cria um SyntaxTheme que NÃO define cor de fundo,
+    preservando o background do terminal.
+    """
+    if name in _theme_cache:
+        return _theme_cache[name]
+
+    base = get_style_by_name(name)
+
+    class NoBg(base):                        # type: ignore
+        background_color = None              # remove o fundo
+
+    _theme_cache[name] = PygmentsSyntaxTheme(NoBg)
+    return _theme_cache[name]
+
+def read_source(src: str) -> str:
+    if src == "-":
+        return sys.stdin.read()
+    p = pathlib.Path(src)
+    if not p.is_file():
+        sys.exit(f"❌ Arquivo não encontrado: {src}")
+    return p.read_text(encoding="utf-8", errors="replace")
+
+def console(no_color: bool) -> Console:
+    return Console(soft_wrap=True, force_terminal=not no_color)
+
+# ───────────────────────── programa ────────────────────────
+def main() -> None:
+    ap = argparse.ArgumentParser(prog="mdview", add_help=False)
+    ap.add_argument("file", nargs="?", help=".md ou '-' para stdin")
+    ap.add_argument("--theme", default="monokai",
+                    help="Tema de sintaxe (veja --list-themes)")
+    ap.add_argument("--list-themes", action="store_true",
+                    help="Mostra catálogo de temas (pré‑visualização)")
+    ap.add_argument("--no-pager", action="store_true",
+                    help="Imprime direto, sem less")
+    ap.add_argument("--no-color", action="store_true",
+                    help="Remove códigos ANSI")
+    ap.add_argument("-h", "--help", action="help",
+                    help="Mostra esta ajuda e sai")
+    args = ap.parse_args()
+
+    # pager padrão se necessário
+    if not args.no_pager and "PAGER" not in os.environ:
+        os.environ["PAGER"] = "less -RFX"
+
+    con = console(args.no_color)
+
+    # —————————————————— catálogo de temas ——————————————————
+    if args.list_themes:
+        ctx = (
+            con.pager(styles=not args.no_color, links=False)
+            if not args.no_pager and sys.stdout.isatty()
+            else con.nullcontext()
+        )
+        with ctx:
+            for t in theme_names():
+                con.print(Markdown(f"# {t}\n\n{DEMO}",
+                                   hyperlinks=False,
+                                   code_theme=transparent_theme(t)))
+                con.print()     # espaçamento entre blocos
+        return
+
+    # —————————————————— visualização arquivo —————————————————
+    if args.file is None:
+        ap.error("arquivo ausente (ou use --list-themes)")
+
+    if args.theme not in theme_names():
+        ap.error(f"tema '{args.theme}' inexistente – use --list-themes")
+
+    md = Markdown(read_source(args.file),
+                  hyperlinks=True,
+                  code_theme=args.theme)
+
+    if args.no_pager or not sys.stdout.isatty():
+        con.print(md)
+    else:
+        with con.pager(styles=not args.no_color, links=True):
+            con.print(md)
+
+if __name__ == "__main__":
+    main()
