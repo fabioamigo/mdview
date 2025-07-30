@@ -1,7 +1,7 @@
 # mdview
 
 > Visualizador de **Markdown colorido** para o terminal – rápido, _zero‑dependência_ de binários nativos, pronto para Linux, macOS e WSL.  
-> Construído sobre [Rich](https://rich.readthedocs.io/) + [Pygments](https://pygments.org/) e pensado para quem gosta de usar **Conda** e **uv pip** em seu fluxo de trabalho.
+> Construído sobre [Rich](https://rich.readthedocs.io/) + [Pygments](https://pygments.org/).
 
 ---
 
