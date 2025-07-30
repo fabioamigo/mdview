@@ -1,4 +1,3 @@
-````markdown
 # mdview
 
 > Visualizador de **Markdown colorido** para o terminal – rápido, _zero‑dependência_ de binários nativos, pronto para Linux, macOS e WSL.  
