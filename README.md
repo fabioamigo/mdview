@@ -57,7 +57,7 @@ mdview --list-themes              # prévia de TODOS os temas
 | --------------- | ---------------------------------------------------------------------- |
 | `file` (`-`)    | Caminho do `.md` ou `-` para ler do *stdin*.                           |
 | `--theme`       | Qualquer tema listado em `--list-themes` (padrão `monokai`).           |
-| `--list-themes` | Mostra preview de todos os temas com o mesmo pipeline de renderização. |
+| `--list-themes` | Mostra preview de todos os temas. |
 | `--no‑pager`    | Imprime direto no `stdout` (ideal para redirecionar).                  |
 | `--no‑color`    | Remove sequências ANSI (copia/cola limpo).                             |
 
